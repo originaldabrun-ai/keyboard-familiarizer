@@ -1,4 +1,5 @@
 # Keyboard Familiarizer
+Keyboard Familiarizer v0.1 Alpha
 
 **Learn the keyboard first. Learn to type second.**
 
