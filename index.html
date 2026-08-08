@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyboard Familiarizer</title>
+<style>
+  :root {
+    --bg: #1d1f21;
+    --panel: #26282b;
+    --card: #303338;
+    --key: #373b40;
+    --key-border: #575c63;
+    --text: #f4f6f8;
+    --muted: #aeb4bc;
+    --accent: #1677ff;
+    --accent-glow: rgba(22, 119, 255, .42);
+    --correct: #2eaf63;
+    --wrong: #d94b4b;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 24px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .app {
+    width: min(1120px, 100%);
+    margin: 0 auto;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .tagline {
+    margin: 6px 0 22px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .stat {
+    padding: 14px;
+    border: 1px solid #3e4248;
+    border-radius: 12px;
+    background: var(--panel);
+  }
+
+  .stat-label {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .stat-value {
+    margin-top: 3px;
+    font-size: 27px;
+    font-weight: 600;
+  }
+
+  .target-value {
+    color: #69b7ff;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1.3fr 1.2fr auto;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid #3e4248;
+    border-radius: 12px;
+    background: var(--panel);
+  }
+
+  label {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  select, button {
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px 12px;
+    border: 1px solid #555b63;
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+  }
+
+  button {
+    align-self: end;
+    cursor: pointer;
+  }
+
+  button:hover {
+    border-color: #7b838d;
+  }
+
+  .output-block {
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px solid #3e4248;
+    border-radius: 12px;
+    background: var(--panel);
+  }
+
+  .output-label {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  #outputDisplay {
+    min-height: 50px;
+    margin-top: 7px;
+    padding: 12px;
+    border: 1px solid #4e545c;
+    border-radius: 8px;
+    background: #202225;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 18px;
+    overflow-wrap: anywhere;
+  }
+
+  .keyboard-scroller {
+    margin-top: 18px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .keyboard {
+    width: max-content;
+    margin: 0 auto;
+    padding: 14px;
+    border: 1px solid #3e4248;
+    border-radius: 14px;
+    background: var(--panel);
+    user-select: none;
+  }
+
+  .row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .row:last-child { margin-bottom: 0; }
+
+  .key {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--key-border);
+    border-radius: 7px;
+    background: var(--key);
+    color: var(--text);
+    font-size: 14px;
+    transition: background-color .1s, transform .08s, box-shadow .1s, outline .1s;
+  }
+
+  .key.target {
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .key.correct {
+    background: var(--correct);
+    transform: translateY(2px);
+  }
+
+  .key.wrong {
+    background: var(--wrong);
+    transform: translateY(2px);
+  }
+
+  .w-backspace { width: 104px; }
+  .w-tab { width: 78px; }
+  .w-backslash { width: 76px; }
+  .w-caps { width: 94px; }
+  .w-enter { width: 114px; }
+  .w-shift-left { width: 124px; }
+  .w-shift-right { width: 142px; }
+  .w-mod { width: 68px; }
+  .w-space { width: 366px; }
+
+  #statusDisplay {
+    margin: 14px 0 0;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .hint {
+    margin-top: 6px;
+    color: #808791;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  @media (max-width: 760px) {
+    body { padding: 14px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .controls { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <h1>Keyboard Familiarizer</h1>
+  <p class="tagline">Learn the keyboard first. Learn to type second.</p>
+
+  <section class="stats">
+    <div class="stat">
+      <div class="stat-label">Target</div>
+      <div id="targetDisplay" class="stat-value target-value">A</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Accuracy</div>
+      <div id="accuracyDisplay" class="stat-value">100%</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Streak</div>
+      <div id="streakDisplay" class="stat-value">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Position</div>
+      <div id="positionDisplay" class="stat-value">1 / 10</div>
+    </div>
+  </section>
+
+  <section class="controls">
+    <label>
+      Drill mode
+      <select id="modeSelect">
+        <option value="top">Top row: Q to P</option>
+        <option value="topReverse">Top row: P to Q</option>
+        <option value="home">Home row: A to ;</option>
+        <option value="homeReverse">Home row: ; to A</option>
+        <option value="bottom">Bottom row: Z to /</option>
+        <option value="bottomReverse">Bottom row: / to Z</option>
+        <option value="columns">Slanted columns</option>
+        <option value="lettersRandom">Random letters</option>
+        <option value="numbersRandom">Random numbers</option>
+        <option value="symbolsRandom">Random symbols</option>
+      </select>
+    </label>
+
+    <label>
+      Advance style
+      <select id="advanceSelect">
+        <option value="correct">Advance only when correct</option>
+        <option value="every">Advance after every key</option>
+      </select>
+    </label>
+
+    <button id="restartButton" type="button">Restart drill</button>
+  </section>
+
+  <section class="output-block">
+    <div class="output-label">Output</div>
+    <div id="outputDisplay" aria-live="polite">Start typing…</div>
+  </section>
+
+  <div class="keyboard-scroller">
+    <section id="keyboard" class="keyboard" aria-label="Interactive QWERTY keyboard"></section>
+  </div>
+
+  <p id="statusDisplay" aria-live="polite">Press the highlighted key.</p>
+  <p class="hint">This file works offline and does not require an account.</p>
+</main>
+
+<script>
+  const layouts = [
+    [
+      { label: '`', key: '`' }, { label: '1', key: '1' }, { label: '2', key: '2' },
+      { label: '3', key: '3' }, { label: '4', key: '4' }, { label: '5', key: '5' },
+      { label: '6', key: '6' }, { label: '7', key: '7' }, { label: '8', key: '8' },
+      { label: '9', key: '9' }, { label: '0', key: '0' }, { label: '-', key: '-' },
+      { label: '=', key: '=' }, { label: 'Backspace', code: 'Backspace', cls: 'w-backspace' }
+    ],
+    [
+      { label: 'Tab', code: 'Tab', cls: 'w-tab' },
+      { label: 'Q', key: 'q' }, { label: 'W', key: 'w' }, { label: 'E', key: 'e' },
+      { label: 'R', key: 'r' }, { label: 'T', key: 't' }, { label: 'Y', key: 'y' },
+      { label: 'U', key: 'u' }, { label: 'I', key: 'i' }, { label: 'O', key: 'o' },
+      { label: 'P', key: 'p' }, { label: '[', key: '[' }, { label: ']', key: ']' },
+      { label: '\\', key: '\\', cls: 'w-backslash' }
+    ],
+    [
+      { label: 'Caps Lock', code: 'CapsLock', cls: 'w-caps' },
+      { label: 'A', key: 'a' }, { label: 'S', key: 's' }, { label: 'D', key: 'd' },
+      { label: 'F', key: 'f' }, { label: 'G', key: 'g' }, { label: 'H', key: 'h' },
+      { label: 'J', key: 'j' }, { label: 'K', key: 'k' }, { label: 'L', key: 'l' },
+      { label: ';', key: ';' }, { label: "'", key: "'" },
+      { label: 'Enter', code: 'Enter', cls: 'w-enter' }
+    ],
+    [
+      { label: 'Shift', code: 'ShiftLeft', cls: 'w-shift-left' },
+      { label: 'Z', key: 'z' }, { label: 'X', key: 'x' }, { label: 'C', key: 'c' },
+      { label: 'V', key: 'v' }, { label: 'B', key: 'b' }, { label: 'N', key: 'n' },
+      { label: 'M', key: 'm' }, { label: ',', key: ',' }, { label: '.', key: '.' },
+      { label: '/', key: '/' }, { label: 'Shift', code: 'ShiftRight', cls: 'w-shift-right' }
+    ],
+    [
+      { label: 'Ctrl', code: 'ControlLeft', cls: 'w-mod' },
+      { label: 'Win', code: 'MetaLeft', cls: 'w-mod' },
+      { label: 'Alt', code: 'AltLeft', cls: 'w-mod' },
+      { label: 'Space', code: 'Space', cls: 'w-space' },
+      { label: 'Alt', code: 'AltRight', cls: 'w-mod' },
+      { label: 'Menu', code: 'ContextMenu', cls: 'w-mod' },
+      { label: 'Ctrl', code: 'ControlRight', cls: 'w-mod' }
+    ]
+  ];
+
+  const drills = {
+    top: ['q','w','e','r','t','y','u','i','o','p'],
+    topReverse: ['p','o','i','u','y','t','r','e','w','q'],
+    home: ['a','s','d','f','g','h','j','k','l',';'],
+    homeReverse: [';','l','k','j','h','g','f','d','s','a'],
+    bottom: ['z','x','c','v','b','n','m',',','.','/'],
+    bottomReverse: ['/','.',',','m','n','b','v','c','x','z'],
+    columns: [
+      'q','a','z', 'w','s','x', 'e','d','c', 'r','f','v', 't','g','b',
+      'y','h','n', 'u','j','m', 'i','k',',', 'o','l','.', 'p',';','/'
+    ],
+    lettersRandom: [...'abcdefghijklmnopqrstuvwxyz'],
+    numbersRandom: [...'1234567890'],
+    symbolsRandom: ['`','-','=','[',']','\\',';',"'",
+      ',','.','/']
+  };
+
+  const keyboard = document.getElementById('keyboard');
+  const modeSelect = document.getElementById('modeSelect');
+  const advanceSelect = document.getElementById('advanceSelect');
+  const restartButton = document.getElementById('restartButton');
+  const targetDisplay = document.getElementById('targetDisplay');
+  const accuracyDisplay = document.getElementById('accuracyDisplay');
+  const streakDisplay = document.getElementById('streakDisplay');
+  const positionDisplay = document.getElementById('positionDisplay');
+  const outputDisplay = document.getElementById('outputDisplay');
+  const statusDisplay = document.getElementById('statusDisplay');
+
+  let sequence = [];
+  let index = 0;
+  let attempts = 0;
+  let correct = 0;
+  let streak = 0;
+  let output = '';
+  let keyElements = [];
+
+  function buildKeyboard() {
+    keyboard.innerHTML = '';
+    keyElements = [];
+
+    layouts.forEach(rowData => {
+      const row = document.createElement('div');
+      row.className = 'row';
+
+      rowData.forEach(item => {
+        const key = document.createElement('div');
+        key.className = `key ${item.cls || ''}`;
+        key.textContent = item.label;
+
+        if (item.key !== undefined) key.dataset.key = item.key;
+        if (item.code) key.dataset.code = item.code;
+
+        row.appendChild(key);
+        keyElements.push(key);
+      });
+
+      keyboard.appendChild(row);
+    });
+  }
+
+  function randomize(source, length = 40) {
+    return Array.from(
+      { length },
+      () => source[Math.floor(Math.random() * source.length)]
+    );
+  }
+
+  function resetDrill() {
+    const mode = modeSelect.value;
+    const source = drills[mode];
+
+    sequence = mode.includes('Random') ? randomize(source) : [...source];
+    index = 0;
+    attempts = 0;
+    correct = 0;
+    streak = 0;
+    output = '';
+
+    outputDisplay.textContent = 'Start typing…';
+    statusDisplay.textContent = 'Press the highlighted key.';
+    updateDisplay();
+  }
+
+  function currentTarget() {
+    return sequence[index];
+  }
+
+  function displayLabel(key) {
+    if (key === ' ') return 'Space';
+    return key.toUpperCase();
+  }
+
+  function clearFeedback() {
+    keyElements.forEach(el => el.classList.remove('target', 'correct', 'wrong'));
+  }
+
+  function findKeyElement(value, code) {
+    return keyElements.find(el => {
+      if (code && el.dataset.code === code) return true;
+      return el.dataset.key === value;
+    });
+  }
+
+  function updateDisplay() {
+    clearFeedback();
+
+    const target = currentTarget();
+    const targetElement = findKeyElement(target);
+
+    if (targetElement) targetElement.classList.add('target');
+
+    targetDisplay.textContent = displayLabel(target);
+    accuracyDisplay.textContent =
+      attempts === 0 ? '100%' : `${Math.round((correct / attempts) * 100)}%`;
+    streakDisplay.textContent = String(streak);
+    positionDisplay.textContent = `${index + 1} / ${sequence.length}`;
+  }
+
+  function advance() {
+    index += 1;
+
+    if (index >= sequence.length) {
+      const mode = modeSelect.value;
+      sequence = mode.includes('Random') ? randomize(drills[mode]) : [...drills[mode]];
+      index = 0;
+      statusDisplay.textContent = 'Drill completed — starting again.';
+    }
+
+    updateDisplay();
+  }
+
+  function normalizeEventKey(event) {
+    return event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  }
+
+  document.addEventListener('keydown', event => {
+    if (['Tab', 'Alt', 'Control', 'Meta'].includes(event.key)) return;
+
+    event.preventDefault();
+
+    const pressed = normalizeEventKey(event);
+    const target = currentTarget();
+    const element = findKeyElement(pressed, event.code);
+
+    attempts += 1;
+    output = `${output}${event.key === ' ' ? '␠' : event.key}`.slice(-90);
+    outputDisplay.textContent = output;
+
+    if (pressed === target) {
+      correct += 1;
+      streak += 1;
+      statusDisplay.textContent = `Correct: ${displayLabel(target)}`;
+
+      if (element) {
+        element.classList.remove('target');
+        element.classList.add('correct');
+      }
+
+      setTimeout(advance, 120);
+    } else {
+      streak = 0;
+      statusDisplay.textContent =
+        `You pressed ${displayLabel(pressed)} — find ${displayLabel(target)}.`;
+
+      if (element) {
+        element.classList.add('wrong');
+        setTimeout(() => element.classList.remove('wrong'), 180);
+      }
+
+      if (advanceSelect.value === 'every') {
+        setTimeout(advance, 180);
+      } else {
+        accuracyDisplay.textContent =
+          `${Math.round((correct / attempts) * 100)}%`;
+        streakDisplay.textContent = '0';
+      }
+    }
+  });
+
+  modeSelect.addEventListener('change', resetDrill);
+  restartButton.addEventListener('click', resetDrill);
+
+  buildKeyboard();
+  resetDrill();
+</script>
+</body>
+</html>
