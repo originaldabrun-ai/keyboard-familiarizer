@@ -1,518 +1,552 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Keyboard Familiarizer</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#10243b">
+<title>It's All in the Hips — v0.1</title>
 <style>
-  :root {
-    --bg: #1d1f21;
-    --panel: #26282b;
-    --card: #303338;
-    --key: #373b40;
-    --key-border: #575c63;
-    --text: #f4f6f8;
-    --muted: #aeb4bc;
-    --accent: #1677ff;
-    --accent-glow: rgba(22, 119, 255, .42);
-    --correct: #2eaf63;
-    --wrong: #d94b4b;
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    min-height: 100vh;
-    padding: 24px;
-    font-family: "Segoe UI", Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-  }
-
-  .app {
-    width: min(1120px, 100%);
-    margin: 0 auto;
-  }
-
-  h1 {
-    margin: 0;
-    font-size: 30px;
-    font-weight: 600;
-    text-align: center;
-  }
-
-  .tagline {
-    margin: 6px 0 22px;
-    color: var(--muted);
-    text-align: center;
-  }
-
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-
-  .stat {
-    padding: 14px;
-    border: 1px solid #3e4248;
-    border-radius: 12px;
-    background: var(--panel);
-  }
-
-  .stat-label {
-    color: var(--muted);
-    font-size: 13px;
-  }
-
-  .stat-value {
-    margin-top: 3px;
-    font-size: 27px;
-    font-weight: 600;
-  }
-
-  .target-value {
-    color: #69b7ff;
-  }
-
-  .controls {
-    display: grid;
-    grid-template-columns: 1.3fr 1.2fr auto;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid #3e4248;
-    border-radius: 12px;
-    background: var(--panel);
-  }
-
-  label {
-    display: block;
-    color: var(--muted);
-    font-size: 13px;
-  }
-
-  select, button {
-    width: 100%;
-    margin-top: 6px;
-    padding: 10px 12px;
-    border: 1px solid #555b63;
-    border-radius: 8px;
-    background: var(--card);
-    color: var(--text);
-    font: inherit;
-  }
-
-  button {
-    align-self: end;
-    cursor: pointer;
-  }
-
-  button:hover {
-    border-color: #7b838d;
-  }
-
-  .output-block {
-    margin-top: 12px;
-    padding: 14px;
-    border: 1px solid #3e4248;
-    border-radius: 12px;
-    background: var(--panel);
-  }
-
-  .output-label {
-    color: var(--muted);
-    font-size: 13px;
-  }
-
-  #outputDisplay {
-    min-height: 50px;
-    margin-top: 7px;
-    padding: 12px;
-    border: 1px solid #4e545c;
-    border-radius: 8px;
-    background: #202225;
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 18px;
-    overflow-wrap: anywhere;
-  }
-
-  .keyboard-scroller {
-    margin-top: 18px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
-
-  .keyboard {
-    width: max-content;
-    margin: 0 auto;
-    padding: 14px;
-    border: 1px solid #3e4248;
-    border-radius: 14px;
-    background: var(--panel);
-    user-select: none;
-  }
-
-  .row {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 6px;
-  }
-
-  .row:last-child { margin-bottom: 0; }
-
-  .key {
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--key-border);
-    border-radius: 7px;
-    background: var(--key);
-    color: var(--text);
-    font-size: 14px;
-    transition: background-color .1s, transform .08s, box-shadow .1s, outline .1s;
-  }
-
-  .key.target {
-    background: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
-  }
-
-  .key.correct {
-    background: var(--correct);
-    transform: translateY(2px);
-  }
-
-  .key.wrong {
-    background: var(--wrong);
-    transform: translateY(2px);
-  }
-
-  .w-backspace { width: 104px; }
-  .w-tab { width: 78px; }
-  .w-backslash { width: 76px; }
-  .w-caps { width: 94px; }
-  .w-enter { width: 114px; }
-  .w-shift-left { width: 124px; }
-  .w-shift-right { width: 142px; }
-  .w-mod { width: 68px; }
-  .w-space { width: 366px; }
-
-  #statusDisplay {
-    margin: 14px 0 0;
-    color: var(--muted);
-    text-align: center;
-  }
-
-  .hint {
-    margin-top: 6px;
-    color: #808791;
-    text-align: center;
-    font-size: 12px;
-  }
-
-  @media (max-width: 760px) {
-    body { padding: 14px; }
-    .stats { grid-template-columns: repeat(2, 1fr); }
-    .controls { grid-template-columns: 1fr; }
-  }
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#10243b;color:white;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:none}
+canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.35)}
+#score{position:absolute;top:max(14px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left));font-size:clamp(22px,4vw,36px);font-weight:900}
+#flow{position:absolute;top:max(14px,env(safe-area-inset-top));right:max(18px,env(safe-area-inset-right));font-size:clamp(17px,3vw,28px);font-weight:900;text-align:right}
+#speed{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:max(15px,env(safe-area-inset-bottom));font-size:12px;font-weight:800;opacity:.75}
+#status{position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);font-size:12px;opacity:.7;white-space:nowrap}
+#calibrate{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(34px,env(safe-area-inset-bottom));z-index:4;display:none}
+button{appearance:none;border:0;border-radius:999px;padding:14px 21px;margin:6px;font-size:15px;font-weight:900;background:#fff;color:#12283f;cursor:pointer}
+button.secondary{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(8px)}
+#overlay{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:22px;background:linear-gradient(155deg,rgba(8,24,42,.96),rgba(24,72,104,.92))}
+.card{width:min(580px,94vw);padding:28px;border-radius:26px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);box-shadow:0 30px 80px rgba(0,0,0,.35);backdrop-filter:blur(14px);text-align:center}
+h1{margin:0;font-size:clamp(38px,8vw,72px);line-height:.95;letter-spacing:-.04em}
+.kicker{font-size:clamp(17px,3vw,23px);font-weight:850;margin:12px 0 20px}
+.card p{line-height:1.45;opacity:.85}
+.small{font-size:12px!important;opacity:.62!important}
+#rotate{display:none;position:fixed;inset:0;z-index:20;align-items:center;justify-content:center;text-align:center;padding:30px;background:#10243b;font-size:22px;font-weight:900}
+@media (orientation:portrait) and (max-width:900px){#rotate{display:flex}}
 </style>
 </head>
 <body>
-<main class="app">
-  <h1>Keyboard Familiarizer</h1>
-  <p class="tagline">Learn the keyboard first. Learn to type second.</p>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div id="score">0</div>
+  <div id="flow">FLOW ×1</div>
+  <div id="speed">0 MPH</div>
+  <div id="heat" style="position:absolute;left:50%;top:max(14px,env(safe-area-inset-top));transform:translateX(-50%);font-size:13px;font-weight:900">SKIERS 0/3</div>
+  <div id="status">← → or A / D on desktop</div>
+</div>
+<button id="calibrate" class="secondary">CALIBRATE</button>
+<button id="quit" class="secondary" style="position:fixed;left:max(14px,env(safe-area-inset-left));bottom:max(34px,env(safe-area-inset-bottom));z-index:4;display:none">END RUN</button>
 
-  <section class="stats">
-    <div class="stat">
-      <div class="stat-label">Target</div>
-      <div id="targetDisplay" class="stat-value target-value">A</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Accuracy</div>
-      <div id="accuracyDisplay" class="stat-value">100%</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Streak</div>
-      <div id="streakDisplay" class="stat-value">0</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Position</div>
-      <div id="positionDisplay" class="stat-value">1 / 10</div>
-    </div>
-  </section>
-
-  <section class="controls">
-    <label>
-      Drill mode
-      <select id="modeSelect">
-        <option value="top">Top row: Q to P</option>
-        <option value="topReverse">Top row: P to Q</option>
-        <option value="home">Home row: A to ;</option>
-        <option value="homeReverse">Home row: ; to A</option>
-        <option value="bottom">Bottom row: Z to /</option>
-        <option value="bottomReverse">Bottom row: / to Z</option>
-        <option value="columns">Slanted columns</option>
-        <option value="lettersRandom">Random letters</option>
-        <option value="numbersRandom">Random numbers</option>
-        <option value="symbolsRandom">Random symbols</option>
-      </select>
-    </label>
-
-    <label>
-      Advance style
-      <select id="advanceSelect">
-        <option value="correct">Advance only when correct</option>
-        <option value="every">Advance after every key</option>
-      </select>
-    </label>
-
-    <button id="restartButton" type="button">Restart drill</button>
-  </section>
-
-  <section class="output-block">
-    <div class="output-label">Output</div>
-    <div id="outputDisplay" aria-live="polite">Start typing…</div>
-  </section>
-
-  <div class="keyboard-scroller">
-    <section id="keyboard" class="keyboard" aria-label="Interactive QWERTY keyboard"></section>
-  </div>
-
-  <p id="statusDisplay" aria-live="polite">Press the highlighted key.</p>
-  <p class="hint">This file works offline and does not require an account.</p>
-</main>
+<div id="overlay">
+ <div class="card">
+   <h1>IT'S ALL<br>IN THE HIPS</h1>
+   <div class="kicker">🏂 Bomb the hill. Hit the features. Don't eat shit.</div>
+   <p>Tilt to carve. Line up jumps, rails, and boxes for points. Dodge trees and skiers. Hold the phone comfortably when you start — that becomes neutral.</p>
+   <button id="start">START / ENABLE TILT</button>
+   <button id="desktop" class="secondary">DESKTOP TEST</button>
+   <p class="small">Mobile tilt requires motion permission and HTTPS. GitHub Pages works.</p>
+ </div>
+</div>
+<div id="endOverlay" style="display:none;position:fixed;inset:0;z-index:8;align-items:center;justify-content:center;padding:22px;background:rgba(8,24,42,.94)">
+ <div class="card">
+   <h1>RUN OVER</h1>
+   <div id="finalScore" class="kicker">0 POINTS</div>
+   <p id="endReason">You called it.</p>
+   <button id="again">RUN IT AGAIN</button>
+   <button id="menu" class="secondary">MAIN MENU</button>
+ </div>
+</div>
+<div id="rotate">🏂 Rotate your phone sideways.<br><br>It's all in the hips.</div>
 
 <script>
-  const layouts = [
-    [
-      { label: '`', key: '`' }, { label: '1', key: '1' }, { label: '2', key: '2' },
-      { label: '3', key: '3' }, { label: '4', key: '4' }, { label: '5', key: '5' },
-      { label: '6', key: '6' }, { label: '7', key: '7' }, { label: '8', key: '8' },
-      { label: '9', key: '9' }, { label: '0', key: '0' }, { label: '-', key: '-' },
-      { label: '=', key: '=' }, { label: 'Backspace', code: 'Backspace', cls: 'w-backspace' }
-    ],
-    [
-      { label: 'Tab', code: 'Tab', cls: 'w-tab' },
-      { label: 'Q', key: 'q' }, { label: 'W', key: 'w' }, { label: 'E', key: 'e' },
-      { label: 'R', key: 'r' }, { label: 'T', key: 't' }, { label: 'Y', key: 'y' },
-      { label: 'U', key: 'u' }, { label: 'I', key: 'i' }, { label: 'O', key: 'o' },
-      { label: 'P', key: 'p' }, { label: '[', key: '[' }, { label: ']', key: ']' },
-      { label: '\\', key: '\\', cls: 'w-backslash' }
-    ],
-    [
-      { label: 'Caps Lock', code: 'CapsLock', cls: 'w-caps' },
-      { label: 'A', key: 'a' }, { label: 'S', key: 's' }, { label: 'D', key: 'd' },
-      { label: 'F', key: 'f' }, { label: 'G', key: 'g' }, { label: 'H', key: 'h' },
-      { label: 'J', key: 'j' }, { label: 'K', key: 'k' }, { label: 'L', key: 'l' },
-      { label: ';', key: ';' }, { label: "'", key: "'" },
-      { label: 'Enter', code: 'Enter', cls: 'w-enter' }
-    ],
-    [
-      { label: 'Shift', code: 'ShiftLeft', cls: 'w-shift-left' },
-      { label: 'Z', key: 'z' }, { label: 'X', key: 'x' }, { label: 'C', key: 'c' },
-      { label: 'V', key: 'v' }, { label: 'B', key: 'b' }, { label: 'N', key: 'n' },
-      { label: 'M', key: 'm' }, { label: ',', key: ',' }, { label: '.', key: '.' },
-      { label: '/', key: '/' }, { label: 'Shift', code: 'ShiftRight', cls: 'w-shift-right' }
-    ],
-    [
-      { label: 'Ctrl', code: 'ControlLeft', cls: 'w-mod' },
-      { label: 'Win', code: 'MetaLeft', cls: 'w-mod' },
-      { label: 'Alt', code: 'AltLeft', cls: 'w-mod' },
-      { label: 'Space', code: 'Space', cls: 'w-space' },
-      { label: 'Alt', code: 'AltRight', cls: 'w-mod' },
-      { label: 'Menu', code: 'ContextMenu', cls: 'w-mod' },
-      { label: 'Ctrl', code: 'ControlRight', cls: 'w-mod' }
-    ]
-  ];
+(()=>{
+const c=document.getElementById('game'),ctx=c.getContext('2d');
+const scoreEl=document.getElementById('score'),flowEl=document.getElementById('flow');
+const speedEl=document.getElementById('speed'),statusEl=document.getElementById('status'),heatEl=document.getElementById('heat');
+const overlay=document.getElementById('overlay'),calBtn=document.getElementById('calibrate');
+const quitBtn=document.getElementById('quit'),endOverlay=document.getElementById('endOverlay');
+const finalScore=document.getElementById('finalScore'),endReason=document.getElementById('endReason');
 
-  const drills = {
-    top: ['q','w','e','r','t','y','u','i','o','p'],
-    topReverse: ['p','o','i','u','y','t','r','e','w','q'],
-    home: ['a','s','d','f','g','h','j','k','l',';'],
-    homeReverse: [';','l','k','j','h','g','f','d','s','a'],
-    bottom: ['z','x','c','v','b','n','m',',','.','/'],
-    bottomReverse: ['/','.',',','m','n','b','v','c','x','z'],
-    columns: [
-      'q','a','z', 'w','s','x', 'e','d','c', 'r','f','v', 't','g','b',
-      'y','h','n', 'u','j','m', 'i','k',',', 'o','l','.', 'p',';','/'
-    ],
-    lettersRandom: [...'abcdefghijklmnopqrstuvwxyz'],
-    numbersRandom: [...'1234567890'],
-    symbolsRandom: ['`','-','=','[',']','\\',';',"'",
-      ',','.','/']
-  };
+let W=0,H=0,dpr=1,last=0,running=false,time=0;
+let score=0,streak=0,gameSpeed=0.34,spawnTimer=.5,skierTimer=1.8,skierHits=0,patrol=false,patrolGap=100,patrolIntro=0,patrolHit=0;
+let rawGamma=0,neutralGamma=0,tilt=0,motionActive=false;
+let riderX=0,targetX=0,carveVel=0,flash=0,perfectText=0,airTime=0,grindTime=0,grindType='',impactTime=0,impactSide=1,feedback='',feedbackTime=0,boostTime=0;
+let gates=[],snow=[],trees=[],obstacles=[];
+const keys={};
 
-  const keyboard = document.getElementById('keyboard');
-  const modeSelect = document.getElementById('modeSelect');
-  const advanceSelect = document.getElementById('advanceSelect');
-  const restartButton = document.getElementById('restartButton');
-  const targetDisplay = document.getElementById('targetDisplay');
-  const accuracyDisplay = document.getElementById('accuracyDisplay');
-  const streakDisplay = document.getElementById('streakDisplay');
-  const positionDisplay = document.getElementById('positionDisplay');
-  const outputDisplay = document.getElementById('outputDisplay');
-  const statusDisplay = document.getElementById('statusDisplay');
+function resize(){
+ dpr=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight;
+ c.width=W*dpr;c.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+ makeTrees();
+}
+addEventListener('resize',resize);resize();
 
-  let sequence = [];
-  let index = 0;
-  let attempts = 0;
-  let correct = 0;
-  let streak = 0;
-  let output = '';
-  let keyElements = [];
+function makeTrees(){
+ trees=[];
+ for(let i=0;i<38;i++){
+   const side=Math.random()<.5?-1:1;
+   trees.push({side,z:Math.random(),offset:.04+Math.random()*.24,size:.65+Math.random()*.7});
+ }
+}
 
-  function buildKeyboard() {
-    keyboard.innerHTML = '';
-    keyElements = [];
+function project(x,z){
+ // z: 0 = horizon, 1 = player
+ const chase=patrol?1:0;
+ const ease=Math.pow(z,patrol?1.42:1.65);
+ const center=W/2;
+ const half=(W*(patrol?.045:.06))+(W*(patrol?.48:.54)*ease);
+ // During patrol, the horizon/view is pulled closer: less preview time.
+ const horizon=patrol?.235:.18;
+ return {x:center+x*half,y:H*(horizon+(1-horizon)*ease),scale:(patrol?.20:.15)+(patrol?.98:.95)*ease,half};
+}
 
-    layouts.forEach(rowData => {
-      const row = document.createElement('div');
-      row.className = 'row';
+function reset(){
+ score=0;streak=0;gameSpeed=.34;spawnTimer=.25;skierTimer=1.5;skierHits=0;patrol=false;patrolGap=100;patrolIntro=0;patrolHit=0;gates=[];snow=[];
+ riderX=0;targetX=0;carveVel=0;flash=0;perfectText=0;airTime=0;grindTime=0;grindType='';impactTime=0;feedback='';feedbackTime=0;boostTime=0;obstacles=[];
+ updateHUD();
+}
 
-      rowData.forEach(item => {
-        const key = document.createElement('div');
-        key.className = `key ${item.cls || ''}`;
-        key.textContent = item.label;
+function updateHUD(){
+ scoreEl.textContent=score.toLocaleString();
+ flowEl.textContent='FLOW ×'+Math.max(1,Math.min(9,1+Math.floor(streak/3)));
+ speedEl.textContent=Math.round(24+gameSpeed*105)+' MPH';
+ heatEl.textContent=patrol?('🚨 PATROL  '+Math.round(patrolGap)+'m'):('SKIERS '+skierHits+'/3');
+}
 
-        if (item.key !== undefined) key.dataset.key = item.key;
-        if (item.code) key.dataset.code = item.code;
+function calibrate(){
+ neutralGamma=rawGamma||0;
+ statusEl.textContent=motionActive?'TILT ACTIVE • neutral '+neutralGamma.toFixed(1)+'°':'← → or A / D on desktop';
+ if(navigator.vibrate)navigator.vibrate(18);
+}
 
-        row.appendChild(key);
-        keyElements.push(key);
-      });
+async function enableMotion(){
+ try{
+   if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+     const r=await DeviceOrientationEvent.requestPermission();
+     if(r!=='granted')throw new Error();
+   }
+   addEventListener('deviceorientation',e=>{
+     if(e.gamma==null)return;
+     rawGamma=e.gamma;motionActive=true;
+     tilt=Math.max(-1,Math.min(1,(rawGamma-neutralGamma)/18));
+   },true);
+   motionActive=true;calibrate();
+ }catch(e){statusEl.textContent='Tilt unavailable — keyboard controls still work';}
+ startGame();
+}
 
-      keyboard.appendChild(row);
-    });
-  }
+function startGame(){
+ overlay.style.display='none';endOverlay.style.display='none';calBtn.style.display='block';quitBtn.style.display='block';
+ reset();running=true;last=performance.now();requestAnimationFrame(loop);
+}
+document.getElementById('start').onclick=enableMotion;
+document.getElementById('desktop').onclick=startGame;
+calBtn.onclick=calibrate;
+function endRun(reason='You called it.'){
+ running=false;
+ calBtn.style.display='none';quitBtn.style.display='none';
+ finalScore.textContent=score.toLocaleString()+' POINTS';
+ endReason.textContent=reason;
+ endOverlay.style.display='flex';
+}
+quitBtn.onclick=()=>endRun('Run ended. Knees intact.');
+document.getElementById('again').onclick=()=>{endOverlay.style.display='none';startGame();};
+document.getElementById('menu').onclick=()=>{
+ endOverlay.style.display='none';overlay.style.display='flex';
+ calBtn.style.display='none';quitBtn.style.display='none';
+};
+addEventListener('keydown',e=>keys[e.key.toLowerCase()]=true);
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 
-  function randomize(source, length = 40) {
-    return Array.from(
-      { length },
-      () => source[Math.floor(Math.random() * source.length)]
-    );
-  }
+function spawnGate(){
+ // "gates" now hold park features: jumps, rails, and boxes.
+ let x=(Math.random()*1.25)-.625;
+ const roll=Math.random();
+ const type=roll<.46?'jump':roll<.73?'rail':'box';
+ gates.push({x,z:0.015,hit:false,miss:false,type});
+ // Most features get a hazard elsewhere on the trail.
+ if(Math.random()<.78){
+   let ox;
+   do{ox=(Math.random()*1.45)-.725;}while(Math.abs(ox-x)<.38);
+   obstacles.push({x:ox,z:0.015,type:Math.random()<.82?'tree':'skier',hit:false});
+ }
+}
+function burst(x,y){
+ for(let i=0;i<18;i++){
+   snow.push({x,y,vx:(Math.random()-.5)*180,vy:-40-Math.random()*160,life:.45+Math.random()*.5,r:1+Math.random()*3});
+ }
+}
 
-  function resetDrill() {
-    const mode = modeSelect.value;
-    const source = drills[mode];
+function update(dt){
+ time+=dt;
+ let input=0;
+ if(keys['arrowleft']||keys['a'])input=-1;
+ if(keys['arrowright']||keys['d'])input=1;
+ if(!input)input=tilt;
 
-    sequence = mode.includes('Random') ? randomize(source) : [...source];
-    index = 0;
-    attempts = 0;
-    correct = 0;
-    streak = 0;
-    output = '';
+ targetX=input*.72;
+ const old=riderX;
+ riderX+=(targetX-riderX)*Math.min(1,dt*5.5);
+ carveVel=(riderX-old)/Math.max(dt,.001);
 
-    outputDisplay.textContent = 'Start typing…';
-    statusDisplay.textContent = 'Press the highlighted key.';
-    updateDisplay();
-  }
+ gameSpeed=Math.min(1.02,.34+Math.max(0,score)/62000+(boostTime>0?.075:0));
+ boostTime=Math.max(0,boostTime-dt);
+ spawnTimer-=dt;
+ if(spawnTimer<=0){
+   spawnGate();
+   spawnTimer=Math.max(.72,1.22-score/40000);
+ }
 
-  function currentTarget() {
-    return sequence[index];
-  }
+ // Ski traffic increases with downhill speed.
+ // At low speed there are only occasional skiers; at high speed the trail gets progressively busier.
+ skierTimer-=dt;
+ if(skierTimer<=0){
+   const sx=(Math.random()*1.45)-.725;
+   obstacles.push({x:sx,z:0.015,type:'skier',hit:false});
+   const speedRatio=Math.max(0,Math.min(1,(gameSpeed-.34)/(.78-.34)));
+   skierTimer=(1.9-speedRatio*1.18)*(0.82+Math.random()*.38);
+ }
 
-  function displayLabel(key) {
-    if (key === ' ') return 'Space';
-    return key.toUpperCase();
-  }
+ for(const g of gates){
+   g.z+=gameSpeed*dt;
+   if(!g.hit&&!g.miss&&g.z>.87){
+     if(Math.abs(riderX-g.x)<.24){
+       g.hit=true;streak++;
+       const mult=Math.max(1,Math.min(9,1+Math.floor(streak/3)));
+       const base=g.type==='jump'?125:g.type==='rail'?250:300;
+       score+=base*mult;
+       const p=project(g.x,g.z);burst(p.x,p.y);
+       if(g.type==='jump'){
+         airTime=.72; boostTime=2.2; feedback='AIR!  +'+(base*mult)+'  SPEED UP';
+       }else if(g.type==='rail'){
+         grindTime=.72; grindType='rail'; if(patrol)patrolGap=Math.min(120,patrolGap+8); feedback='RAIL GRIND  +'+(base*mult);
+       }else{
+         grindTime=.9; grindType='box'; if(patrol)patrolGap=Math.min(120,patrolGap+10); feedback='BOX SPIN  +'+(base*mult);
+       }
+       feedbackTime=.75;flash=.11;perfectText=.45;updateHUD();
+       if(navigator.vibrate)navigator.vibrate(streak%3===0?[15,18,28]:16);
+     }else{
+       g.miss=true;streak=0;updateHUD();
+     }
+   }
+ }
+ gates=gates.filter(g=>g.z<1.15);
+ for(const o of obstacles){
+   o.z+=gameSpeed*dt;
+   if(!o.hit&&o.z>.895&&o.z<1.02&&Math.abs(riderX-o.x)<(o.type==='tree'?.075:.09)){
+     o.hit=true;
+     impactTime=.65; impactSide=Math.sign(o.x-riderX)||1;
+     streak=0;
+     score=Math.max(0,score-(o.type==='tree'?250:400));
+     gameSpeed=Math.max(.22,gameSpeed-(o.type==='tree'?.16:.065));
+     boostTime=0;
+     if(o.type==='skier'){
+       if(patrol){patrolGap-=15;}
+       else{
+         skierHits++;
+         if(skierHits>=3){
+           patrol=true;patrolGap=68;patrolIntro=1.8;skierHits=3;
+           feedback='🚨 SKI PATROL INBOUND 🚨';
+         }
+       }
+     }else if(patrol){patrolGap-=25;}
+     if(!(o.type==='skier'&&patrolIntro>0)) feedback=o.type==='tree'?'TREE SMASH  -250':'SKIER STEAMROLLED  -400';
+     feedbackTime=1.0;flash=.16;
+     const ip=project(o.x,o.z);burst(ip.x,ip.y);
+     updateHUD();
+     if(navigator.vibrate)navigator.vibrate([30,25,55]);
+   }
+ }
+ obstacles=obstacles.filter(o=>o.z<1.12);
 
-  function clearFeedback() {
-    keyElements.forEach(el => el.classList.remove('target', 'correct', 'wrong'));
-  }
+ for(const t of trees){
+   t.z+=gameSpeed*dt*.55;
+   if(t.z>1.05){t.z=0;t.offset=.04+Math.random()*.24;t.side=Math.random()<.5?-1:1;}
+ }
+ for(const s of snow){
+   s.x+=s.vx*dt;s.y+=s.vy*dt;s.vy+=260*dt;s.life-=dt;
+ }
+ snow=snow.filter(s=>s.life>0);
+ if(patrol){
+   patrolIntro=Math.max(0,patrolIntro-dt);
+   // Clean riding slowly opens the gap. Features accelerate the escape;
+   // crashes and steamrolling skiers let Patrol reel you back in.
+   const cleanGain=2.6;
+   patrolGap+=dt*cleanGain;
+   patrolGap=Math.min(120,patrolGap);
+   if(patrolGap>=120){
+     patrol=false;skierHits=0;patrolGap=100;
+     feedback='PATROL LOST!';feedbackTime=1.3;
+   }else if(patrolGap<=0){
+     patrolGap=0;patrolHit=1.0;
+     endRun('Ski Patrol caught you. Shoulder-check justice.');
+     return;
+   }
+   updateHUD();
+ }
+ flash=Math.max(0,flash-dt);perfectText=Math.max(0,perfectText-dt);airTime=Math.max(0,airTime-dt);grindTime=Math.max(0,grindTime-dt);impactTime=Math.max(0,impactTime-dt);feedbackTime=Math.max(0,feedbackTime-dt);
+}
 
-  function findKeyElement(value, code) {
-    return keyElements.find(el => {
-      if (code && el.dataset.code === code) return true;
-      return el.dataset.key === value;
-    });
-  }
+function drawMountain(){
+ const sky=ctx.createLinearGradient(0,0,0,H*.5);
+ sky.addColorStop(0,'#7bb8df');sky.addColorStop(1,'#d8eef8');
+ ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
 
-  function updateDisplay() {
-    clearFeedback();
+ // distant mountain silhouettes
+ ctx.fillStyle='rgba(57,91,118,.55)';
+ ctx.beginPath();ctx.moveTo(0,H*.27);ctx.lineTo(W*.12,H*.13);ctx.lineTo(W*.23,H*.25);
+ ctx.lineTo(W*.38,H*.10);ctx.lineTo(W*.52,H*.25);ctx.lineTo(W*.69,H*.12);
+ ctx.lineTo(W*.84,H*.25);ctx.lineTo(W,H*.15);ctx.lineTo(W,H*.34);ctx.lineTo(0,H*.34);ctx.closePath();ctx.fill();
 
-    const target = currentTarget();
-    const targetElement = findKeyElement(target);
+ // piste
+ ctx.fillStyle='#edf7fb';
+ ctx.beginPath();ctx.moveTo(W*.44,H*.18);ctx.lineTo(W*.56,H*.18);ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
 
-    if (targetElement) targetElement.classList.add('target');
+ // moving snow grooves for speed
+ for(let i=0;i<22;i++){
+   let z=(i/22+(time*gameSpeed*.72))%1;
+   const p1=project(-.78,z),p2=project(-.78,z+.025);
+   ctx.strokeStyle='rgba(113,164,191,'+(0.06+z*.13)+')';ctx.lineWidth=1+z*2;
+   ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();
+   const q1=project(.78,z),q2=project(.78,z+.025);
+   ctx.beginPath();ctx.moveTo(q1.x,q1.y);ctx.lineTo(q2.x,q2.y);ctx.stroke();
+ }
+}
 
-    targetDisplay.textContent = displayLabel(target);
-    accuracyDisplay.textContent =
-      attempts === 0 ? '100%' : `${Math.round((correct / attempts) * 100)}%`;
-    streakDisplay.textContent = String(streak);
-    positionDisplay.textContent = `${index + 1} / ${sequence.length}`;
-  }
+function drawTree(t){
+ const x=t.side*(1+t.offset);
+ const p=project(x,t.z),s=p.scale*t.size;
+ ctx.save();ctx.translate(p.x,p.y);
+ ctx.fillStyle='#694f3d';ctx.fillRect(-2*s,-16*s,4*s,18*s);
+ ctx.fillStyle='#234d46';
+ for(let i=0;i<3;i++){
+   ctx.beginPath();ctx.moveTo(0,-55*s+i*13*s);ctx.lineTo(-18*s-i*3*s,-18*s+i*7*s);
+   ctx.lineTo(18*s+i*3*s,-18*s+i*7*s);ctx.closePath();ctx.fill();
+ }
+ ctx.restore();
+}
 
-  function advance() {
-    index += 1;
+function drawGate(g){
+ const p=project(g.x,g.z),s=p.scale;
+ ctx.save();ctx.translate(p.x,p.y);ctx.globalAlpha=g.miss?.25:1;
 
-    if (index >= sequence.length) {
-      const mode = modeSelect.value;
-      sequence = mode.includes('Random') ? randomize(drills[mode]) : [...drills[mode]];
-      index = 0;
-      statusDisplay.textContent = 'Drill completed — starting again.';
-    }
+ if(g.type==='jump'){
+   // Built snow kicker: trapezoidal ramp pointing downhill toward the rider.
+   ctx.fillStyle=g.hit?'rgba(190,230,245,.30)':'#d9edf5';
+   ctx.strokeStyle='rgba(56,105,132,.55)';
+   ctx.lineWidth=Math.max(1,2.5*s);
+   ctx.beginPath();
+   ctx.moveTo(-16*s,-36*s); ctx.lineTo(16*s,-36*s);
+   ctx.lineTo(48*s,5*s); ctx.lineTo(-48*s,5*s);
+   ctx.closePath(); ctx.fill(); ctx.stroke();
 
-    updateDisplay();
-  }
+   // Groomer/ramp lines
+   ctx.strokeStyle='rgba(70,125,151,.50)';
+   ctx.lineWidth=Math.max(1,2*s);
+   for(let i=-1;i<=1;i++){
+     ctx.beginPath();ctx.moveTo(i*8*s,-30*s);ctx.lineTo(i*22*s,-1*s);ctx.stroke();
+   }
+   // Arrow-tip chevrons
+   ctx.strokeStyle='#3f7f9f';ctx.lineWidth=Math.max(2,4*s);ctx.lineCap='round';
+   for(let row=0;row<2;row++){
+     const yy=(-18+row*14)*s;
+     ctx.beginPath();
+     ctx.moveTo(-15*s,yy+7*s);ctx.lineTo(0,yy);ctx.lineTo(15*s,yy+7*s);ctx.stroke();
+   }
+ }else if(g.type==='rail'){
+   // Rail runs downhill in perspective. Support posts stay on the visually far/inside side:
+   // left-side rail -> posts on right; right-side rail -> posts on left; center -> no visible posts.
+   ctx.strokeStyle=g.hit?'rgba(170,225,245,.32)':'#394e5e';
+   ctx.lineWidth=Math.max(3,8*s);ctx.lineCap='round';
+   ctx.beginPath();ctx.moveTo(0,-52*s);ctx.lineTo(0,14*s);ctx.stroke();
 
-  function normalizeEventKey(event) {
-    return event.key.length === 1 ? event.key.toLowerCase() : event.key;
-  }
+   const centerRail=Math.abs(g.x)<.16;
+   if(!centerRail){
+     const postSide=g.x<0?1:-1;
+     ctx.lineWidth=Math.max(1,3*s);
+     ctx.beginPath();
+     // Two supports lean consistently toward the selected side.
+     ctx.moveTo(0,-34*s);ctx.lineTo(postSide*14*s,-22*s);
+     ctx.moveTo(0,-4*s);ctx.lineTo(postSide*18*s,10*s);
+     ctx.stroke();
+     // tiny feet help sell that the posts contact the snow
+     ctx.lineWidth=Math.max(1,2*s);
+     ctx.beginPath();
+     ctx.moveTo(postSide*9*s,-22*s);ctx.lineTo(postSide*19*s,-22*s);
+     ctx.moveTo(postSide*12*s,10*s);ctx.lineTo(postSide*23*s,10*s);
+     ctx.stroke();
+   }
+ }else{
+   // Terrain-park box: visible rectangular top and side faces, aligned downhill.
+   const top=g.hit?'rgba(175,225,240,.34)':'#6f8fa2';
+   ctx.fillStyle=top;ctx.strokeStyle='#3c596b';ctx.lineWidth=Math.max(1,2*s);
+   ctx.beginPath();
+   ctx.moveTo(-22*s,-48*s);ctx.lineTo(22*s,-48*s);
+   ctx.lineTo(35*s,9*s);ctx.lineTo(-35*s,9*s);ctx.closePath();ctx.fill();ctx.stroke();
+   ctx.fillStyle=g.hit?'rgba(90,130,150,.25)':'#49697c';
+   ctx.beginPath();
+   ctx.moveTo(-35*s,9*s);ctx.lineTo(35*s,9*s);ctx.lineTo(31*s,20*s);ctx.lineTo(-31*s,20*s);ctx.closePath();ctx.fill();
+   ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=Math.max(1,3*s);
+   ctx.beginPath();ctx.moveTo(-20*s,-43*s);ctx.lineTo(-31*s,5*s);ctx.moveTo(20*s,-43*s);ctx.lineTo(31*s,5*s);ctx.stroke();
+ }
+ ctx.restore();ctx.globalAlpha=1;
+}
+function drawObstacle(o){
+ const p=project(o.x,o.z),s=p.scale;
+ ctx.save();ctx.translate(p.x,p.y);if(o.hit){ctx.rotate((o.type==='tree'?.95:1.5)*Math.sign(o.x||1));ctx.globalAlpha=.62;}
+ if(o.type==='tree'){
+   ctx.fillStyle='#76543c';ctx.fillRect(-3*s,-35*s,6*s,38*s);
+   ctx.fillStyle='#214b43';
+   for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(0,(-78+i*18)*s);ctx.lineTo((-27-i*3)*s,(-24+i*10)*s);ctx.lineTo((27+i*3)*s,(-24+i*10)*s);ctx.closePath();ctx.fill();}
+ }else{
+   ctx.strokeStyle='#263746';ctx.lineWidth=Math.max(2,6*s);ctx.lineCap='round';
+   ctx.beginPath();ctx.moveTo(0,-48*s);ctx.lineTo(-5*s,-23*s);ctx.moveTo(-5*s,-23*s);ctx.lineTo(-20*s,0);ctx.moveTo(-5*s,-23*s);ctx.lineTo(17*s,0);ctx.stroke();
+   ctx.fillStyle='#2879c7';ctx.fillRect(-9*s,-48*s,18*s,24*s);
+   ctx.fillStyle='#f0c5a5';ctx.beginPath();ctx.arc(0,-58*s,8*s,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle='#263746';ctx.lineWidth=Math.max(1,3*s);ctx.beginPath();ctx.moveTo(-25*s,3*s);ctx.lineTo(22*s,3*s);ctx.stroke();
+ }
+ ctx.restore();
+}
+function drawPatrol(){
+ if(!patrol)return;
+ // Gap determines how much of the red patrol skier looms up from behind.
+ const closeness=1-Math.max(0,Math.min(1,patrolGap/120));
+ const x=W/2 + Math.sin(time*2.1)*W*.035;
+ const y=H*(1.13-closeness*.31);
+ const sc=.75+closeness*1.05;
+ ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);
+ ctx.fillStyle='rgba(20,42,56,.22)';ctx.beginPath();ctx.ellipse(0,15,46,10,0,0,Math.PI*2);ctx.fill();
+ // skis
+ ctx.strokeStyle='#263746';ctx.lineWidth=5;ctx.lineCap='round';
+ ctx.beginPath();ctx.moveTo(-35,9);ctx.lineTo(30,9);ctx.moveTo(-28,16);ctx.lineTo(38,16);ctx.stroke();
+ // legs
+ ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(-15,6);ctx.lineTo(-7,-25);ctx.moveTo(16,7);ctx.lineTo(7,-25);ctx.stroke();
+ // red patrol jacket
+ ctx.fillStyle='#d73535';ctx.fillRect(-17,-62,34,39);
+ // white patrol cross
+ ctx.fillStyle='#fff';ctx.fillRect(-4,-56,8,25);ctx.fillRect(-12,-48,24,8);
+ // arms
+ ctx.strokeStyle='#d73535';ctx.lineWidth=10;ctx.beginPath();ctx.moveTo(-13,-52);ctx.lineTo(-34,-31);ctx.moveTo(13,-52);ctx.lineTo(34,-31);ctx.stroke();
+ // head/helmet
+ ctx.fillStyle='#efc3a3';ctx.beginPath();ctx.arc(0,-72,11,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#b51f2b';ctx.beginPath();ctx.arc(0,-77,12,Math.PI,Math.PI*2);ctx.fill();
+ ctx.restore();
+}
+function drawRider(){
+ const p=project(riderX,patrol?.82:.91);
+ ctx.save();
+ let animY=0,animRot=0;
+ if(airTime>0){
+   const phase=1-airTime/.72;
+   animY=-Math.sin(phase*Math.PI)*82;
+   // Full backflip over the jump.
+   animRot=-phase*Math.PI*2;
+ }
+ if(grindTime>0){
+   animY=-8;
+   const duration=grindType==='box'?.9:.72;
+   const phase=1-grindTime/duration;
+   // Boxes get a full board/rider spin; rails stay mostly locked into a grind.
+   animRot=grindType==='box'?phase*Math.PI*2:.12*Math.sin(time*18);
+ }
+ if(impactTime>0){animRot=-impactSide*.65*(impactTime/.65);animY=-Math.sin((1-impactTime/.65)*Math.PI)*18;}
+ ctx.translate(p.x,p.y+animY);
+ const lean=Math.max(-.5,Math.min(.5,carveVel*.035));
+ ctx.rotate(lean+animRot);
 
-  document.addEventListener('keydown', event => {
-    if (['Tab', 'Alt', 'Control', 'Meta'].includes(event.key)) return;
+ // shadow
+ ctx.fillStyle='rgba(35,67,86,.16)';ctx.beginPath();ctx.ellipse(10,13,42,9,0,0,Math.PI*2);ctx.fill();
 
-    event.preventDefault();
+ // board
+ ctx.rotate(-lean*.4);
+ ctx.fillStyle='#17283b';ctx.beginPath();ctx.ellipse(0,5,40,6,0,0,Math.PI*2);ctx.fill();
+ ctx.rotate(lean*.4);
 
-    const pressed = normalizeEventKey(event);
-    const target = currentTarget();
-    const element = findKeyElement(pressed, event.code);
+ // rider legs/body
+ ctx.strokeStyle='#18283a';ctx.lineWidth=7;ctx.lineCap='round';
+ ctx.beginPath();ctx.moveTo(-12,0);ctx.lineTo(-4,-24);ctx.lineTo(3,-42);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(13,0);ctx.lineTo(7,-23);ctx.lineTo(3,-42);ctx.stroke();
+ ctx.strokeStyle='#e26b39';ctx.lineWidth=13;
+ ctx.beginPath();ctx.moveTo(3,-42);ctx.lineTo(0,-72);ctx.stroke();
+ // arms
+ ctx.strokeStyle='#18283a';ctx.lineWidth=6;
+ ctx.beginPath();ctx.moveTo(0,-58);ctx.lineTo(-22,-45);ctx.moveTo(0,-58);ctx.lineTo(24,-48);ctx.stroke();
+ // head
+ ctx.fillStyle='#f0c5a5';ctx.beginPath();ctx.arc(0,-83,9,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#17283b';ctx.beginPath();ctx.arc(0,-87,10,Math.PI,Math.PI*2);ctx.fill();
 
-    attempts += 1;
-    output = `${output}${event.key === ' ' ? '␠' : event.key}`.slice(-90);
-    outputDisplay.textContent = output;
+ // carve spray
+ const amt=Math.min(15,4+Math.abs(carveVel)*.35);
+ ctx.fillStyle='rgba(255,255,255,.75)';
+ for(let i=0;i<amt;i++){
+   const sx=-Math.sign(carveVel||1)*(18+Math.random()*38),sy=4+(Math.random()-.5)*18;
+   ctx.fillRect(sx,sy,2+Math.random()*4,2+Math.random()*3);
+ }
+ ctx.restore();
+}
 
-    if (pressed === target) {
-      correct += 1;
-      streak += 1;
-      statusDisplay.textContent = `Correct: ${displayLabel(target)}`;
+function draw(){
+ drawMountain();
+ [...trees].sort((a,b)=>a.z-b.z).forEach(drawTree);
+ [...gates].sort((a,b)=>a.z-b.z).forEach(drawGate);
+ [...obstacles].sort((a,b)=>a.z-b.z).forEach(drawObstacle);
+ drawRider();
+ drawPatrol();
 
-      if (element) {
-        element.classList.remove('target');
-        element.classList.add('correct');
-      }
+ for(const s of snow){
+   ctx.globalAlpha=Math.max(0,s.life);
+   ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
+ }
+ ctx.globalAlpha=1;
 
-      setTimeout(advance, 120);
-    } else {
-      streak = 0;
-      statusDisplay.textContent =
-        `You pressed ${displayLabel(pressed)} — find ${displayLabel(target)}.`;
+ if(patrol){
+   const barW=Math.min(330,W*.38),barH=13,barX=W/2-barW/2,barY=H*.115;
+   const pct=Math.max(0,Math.min(1,patrolGap/120));
+   ctx.save();
+   ctx.fillStyle='rgba(8,24,42,.42)';
+   ctx.fillRect(barX-3,barY-3,barW+6,barH+6);
+   ctx.fillStyle='rgba(255,255,255,.22)';
+   ctx.fillRect(barX,barY,barW,barH);
+   ctx.fillStyle='#fff';
+   ctx.fillRect(barX,barY,barW*pct,barH);
+   ctx.textAlign='left';ctx.font='900 12px system-ui';ctx.fillStyle='#d73535';
+   ctx.fillText('🚨 CAUGHT',barX,barY-7);
+   ctx.textAlign='right';ctx.fillStyle='#fff';
+   ctx.fillText('ESCAPE 🏂',barX+barW,barY-7);
+   // Patrol marker moves from the caught side toward escape as distance opens.
+   const mx=barX+barW*pct;
+   ctx.fillStyle='#d73535';ctx.beginPath();ctx.arc(mx,barY+barH/2,7,0,Math.PI*2);ctx.fill();
+   ctx.restore();
+ }
+ if(patrolIntro>0){
+   ctx.textAlign='center';ctx.font='900 '+Math.max(24,W*.03)+'px system-ui';
+   ctx.fillStyle='rgba(210,35,35,'+Math.min(1,patrolIntro)+')';
+   ctx.fillText('🚨 SKI PATROL INBOUND 🚨',W/2,H*.20);
+ }
+ if(feedbackTime>0){
+   ctx.textAlign='center';ctx.font='900 '+Math.max(20,W*.023)+'px system-ui';
+   ctx.fillStyle='rgba(255,255,255,'+Math.min(1,feedbackTime*2.2)+')';
+   ctx.fillText(feedback,W/2,H*.29);
+ }else if(perfectText>0){
+   ctx.textAlign='center';ctx.font='900 '+Math.max(22,W*.025)+'px system-ui';
+   ctx.fillStyle='rgba(255,255,255,'+Math.min(1,perfectText*3)+')';
+   ctx.fillText(streak%3===0&&streak>0?'FLOW!':'STOMPED!',W/2,H*.29);
+ }
+ if(flash>0){
+   ctx.fillStyle='rgba(255,255,255,'+(flash*1.5)+')';ctx.fillRect(0,0,W,H);
+ }
+}
 
-      if (element) {
-        element.classList.add('wrong');
-        setTimeout(() => element.classList.remove('wrong'), 180);
-      }
-
-      if (advanceSelect.value === 'every') {
-        setTimeout(advance, 180);
-      } else {
-        accuracyDisplay.textContent =
-          `${Math.round((correct / attempts) * 100)}%`;
-        streakDisplay.textContent = '0';
-      }
-    }
-  });
-
-  modeSelect.addEventListener('change', resetDrill);
-  restartButton.addEventListener('click', resetDrill);
-
-  buildKeyboard();
-  resetDrill();
+function loop(now){
+ if(!running)return;
+ const dt=Math.min(.033,(now-last)/1000||0);last=now;
+ update(dt);draw();requestAnimationFrame(loop);
+}
+draw();
+})();
 </script>
 </body>
 </html>
